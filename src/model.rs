@@ -167,7 +167,23 @@ fn mlp(
     rms_w: &Tensor<f32>,
     eps: f32,
 ) {
-    todo!("Implement mlp");
+    let seq_len = residual.shape()[0];
+    let d = residual.shape()[1];
+    let di = gate.shape()[1];
+    assert!(seq_len == hidden_states.shape()[0]);
+    assert!(d == hidden_states.shape()[1]);
+    assert!(di == up.shape()[1]);
+    assert!(d == w_up.shape()[1]);
+    assert!(di == w_down.shape()[1]);
+    assert!(di == w_gate.shape()[0]);
+    assert!(d == rms_w.size());
+
+    OP::rms_norm(hidden_states, residual, rms_w, eps);
+    OP::matmul_transb(gate, 0.0, hidden_states, w_gate, 1.0);
+    OP::matmul_transb(up, 0.0, hidden_states, w_up, 1.0);
+    // let mut act = Tensor::<f32>::default(&vec![seq_len, di]);
+    OP::swiglu(up, gate);
+    OP::matmul_transb(residual, 1.0, up, w_down, 1.0);
 }
 
 #[test]
